@@ -9,7 +9,7 @@ import { useState } from "react";
 import { ChartCard, LegendKey, SparseNote, Swatch, Tip, TipRow, type StateProps } from "./ChartCard";
 import { axisFormatter, fmt, fmtPercent, type NumKind } from "./format";
 import { LiveRegion, usePlotNav } from "./interaction";
-import { c, cat, catPat, maxTicksFor, niceTicks, pickIndices, scaleLinear, sizeOf, sum, useTween, useWidth } from "./lib";
+import { barPath, c, cat, catPat, maxTicksFor, niceTicks, pickIndices, scaleLinear, sizeOf, sum, useTween, useWidth } from "./lib";
 
 export type StackSeries = { key: string; label: string; color?: string };
 export type StackPoint = { label: string; values: number[] };
@@ -114,7 +114,8 @@ export function StackedBars({
                   const hh = bottom - top;
                   if (hh < 0.5) return null;
                   const isTop = k === series.length - 1 || segs(i).slice(k + 1).every((q) => q.y1 - q.y0 <= 0);
-                  return <rect key={k} x={x0} y={top} width={barW} height={Math.max(0, hh - (isTop ? 0 : 1.5))} rx={isTop ? Math.min(4, barW / 4) : 1} fill={colors[k]} data-wc-pat={pat(k)} />;
+                  if (isTop) return <path key={k} d={barPath(x0, bottom - 1.5, barW, Math.max(1, hh - 1.5), Math.min(4, barW / 4))} fill={colors[k]} data-wc-pat={pat(k)} />;
+                  return <rect key={k} x={x0} y={top} width={barW} height={Math.max(0, hh - 1.5)} rx={1} fill={colors[k]} data-wc-pat={pat(k)} />;
                 })}
                 {mode === "stacked" && slot >= 34 && totals[i] > 0 && (
                   <text x={x0 + barW / 2} y={y(totals[i]) - 6} textAnchor="middle" fontSize="12" fontWeight={500} fill={c.ink2} className="tabular-nums">{fmt(totals[i], kind)}</text>

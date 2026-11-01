@@ -1,0 +1,7 @@
+@import "tailwindcss";
+@import "./templates/tokens.css";
+@import "./templates/themes/brand-example.css";
+@source "./";
+@source "../../../src";
+@custom-variant dark (&:where(.dark, .dark *));
+body { margin: 0; }

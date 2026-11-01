@@ -1,0 +1,10 @@
+@import "tailwindcss";
+@import "./templates/tokens.css";
+@source "./";
+@source "../../../../src";
+@custom-variant dark (&:where(.dark, .dark *));
+body { margin: 0; }
+
+/* Recharts draws its own focus ring on the chart wrapper. Swap it for the token ring. */
+.recharts-wrapper:focus-visible, .recharts-surface:focus-visible { outline: 2px solid var(--wc-focus); outline-offset: 4px; border-radius: 8px; }
+.recharts-wrapper:focus:not(:focus-visible), .recharts-surface:focus:not(:focus-visible) { outline: none; }

@@ -1,0 +1,26 @@
+{
+  "name": "world-class-charts",
+  "version": "0.1.0",
+  "description": "Typed React chart, KPI and dashboard components with semantic tokens, dark mode and accessibility built in.",
+  "license": "MIT",
+  "author": "Will Mather",
+  "private": true,
+  "repository": "github:willmather95/world-class-charts",
+  "type": "module",
+  "sideEffects": ["*.css"],
+  "exports": {
+    ".": "./src/index.ts",
+    "./tokens.css": "./src/tokens.css",
+    "./themes/*": "./src/themes/*",
+    "./package.json": "./package.json"
+  },
+  "files": ["src", "docs/SKILL.md", "docs/references"],
+  "peerDependencies": {
+    "@types/react": "^19.0.0",
+    "react": "^19.0.0",
+    "tailwindcss": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": { "optional": true }
+  }
+}

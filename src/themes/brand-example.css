@@ -1,0 +1,89 @@
+/* Worked example: mapping a brand onto the semantic tokens.
+   Brand inputs: primary violet #5C5EF5, deep navy #0B2742 for text, a warm off-white page.
+   Rules followed (see docs/references/theming.md):
+   1. Only override tokens. Templates never change.
+   2. The brand color becomes --wc-accent and --wc-cat-1. Everything else stays neutral.
+   3. Text tokens pass 4.5:1 and mark tokens pass 3:1 on the surface. Run:
+      cd docs/harness && node contrast.mjs ../../src/tokens.css ../../src/themes/brand-example.css
+   4. Positive, negative and warning keep their usual meaning. Do not recolor them to the brand.
+   5. Dark mode gets its own lighter, less saturated values. Never just invert.
+   Use: <div data-brand="example"> ... </div>, or put the attribute on <html>. */
+
+[data-brand="example"] {
+  --wc-page: #f6f9fc;
+  --wc-surface: #ffffff;
+  --wc-surface-2: #f3f6fa;
+  --wc-track: #e6ebf1;
+  --wc-grid: #e9eef4;
+  --wc-hairline: #e3e8ee;
+  --wc-axis: #7a8798;
+
+  --wc-ink: #0b2742;
+  --wc-ink-2: #30405a;
+  --wc-muted: #5b6a80;
+
+  --wc-accent: #5c5ef5;
+  --wc-accent-soft: #e7e6ff;
+  --wc-accent-ink: #4a3fe0;
+  --wc-focus: #5c5ef5;
+
+  --wc-cat-1: #5c5ef5;
+  --wc-cat-2: #d9590f;
+  --wc-cat-3: #0e8a5f;
+  --wc-cat-4: #b13f8a;
+  --wc-cat-5: #3997c6;
+  --wc-cat-6: #4538dc;
+  --wc-cat-7: #6d5303;
+  --wc-cat-8: #535765;
+
+  --wc-seq-0: #eceff4;
+  --wc-seq-1: #c2cafb;
+  --wc-seq-2: #9ea7f9;
+  --wc-seq-3: #7f86f7;
+  --wc-seq-4: #6765f5;
+  --wc-seq-5: #5441f0;
+  --wc-seq-6: #431fd4;
+
+  --wc-tip-bg: #0b2742;
+  --wc-tip-muted: #a9b6c8;
+}
+
+@media not print {
+.dark [data-brand="example"], .dark[data-brand="example"], [data-theme="dark"] [data-brand="example"], [data-theme="dark"][data-brand="example"] {
+  --wc-page: #06111f;
+  --wc-surface: #0c1a2c;
+  --wc-surface-2: #12233a;
+  --wc-track: #1b2e47;
+  --wc-grid: #172940;
+  --wc-hairline: #1d3049;
+  --wc-axis: #7f8ea3;
+
+  --wc-ink: #f2f5f9;
+  --wc-ink-2: #c9d3df;
+  --wc-muted: #9aa8bb;
+
+  --wc-accent: #8b85ff;
+  --wc-accent-soft: #24245a;
+  --wc-accent-ink: #b9b5ff;
+  --wc-focus: #a39eff;
+
+  --wc-cat-1: #8b85ff;
+  --wc-cat-2: #ff8a65;
+  --wc-cat-3: #2dd4bf;
+  --wc-cat-4: #c2479a;
+  --wc-cat-5: #5ea6c9;
+  --wc-cat-6: #7f5fdd;
+  --wc-cat-7: #ad9000;
+  --wc-cat-8: #8f9399;
+
+  /* In dark, more is lighter. */
+  --wc-seq-0: #172940;
+  --wc-seq-1: #3c229e;
+  --wc-seq-2: #4f3db8;
+  --wc-seq-3: #6356d2;
+  --wc-seq-4: #786fed;
+  --wc-seq-5: #918ef7;
+  --wc-seq-6: #b0b2fa;
+  /* Tooltip keeps the base dark-mode values. */
+}
+} /* end @media not print */

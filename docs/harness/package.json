@@ -1,0 +1,24 @@
+{
+  "name": "world-class-charts-check",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@tailwindcss/cli": "^4.3.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "esbuild": "^0.28.2",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@axe-core/playwright": "^4.14.0"
+  },
+  "scripts": {
+    "build": "./build.sh",
+    "contrast": "node contrast.mjs",
+    "test": "./test.sh"
+  }
+}

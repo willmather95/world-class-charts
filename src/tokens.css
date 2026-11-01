@@ -1,0 +1,266 @@
+/* world-class-charts: semantic token layer.
+   Charts only read these names. A product maps its brand into them (see themes/brand-example.css
+   and docs/references/theming.md). Light values live on :root, dark values on .dark / [data-theme="dark"].
+   Import after `@import "tailwindcss";`. Every pair used for text or required marks is checked by
+   the harness (contrast.mjs): text >= 4.5:1, marks >= 3:1 on --wc-surface. */
+
+:root {
+  /* Surfaces */
+  --wc-page: #f2f2f1;          /* behind cards */
+  --wc-surface: #ffffff;       /* card */
+  --wc-surface-2: #f6f6f5;     /* list rows, ghost cells */
+  --wc-track: #ebebea;         /* empty units, progress track (decorative) */
+  --wc-grid: #ececeb;          /* gridlines (decorative) */
+  --wc-hairline: #e4e4e3;      /* dividers, card ring */
+  --wc-axis: #8a8a8a;          /* zero baseline, reference lines (>= 3:1) */
+
+  /* Text */
+  --wc-ink: #141414;           /* titles, hero numbers */
+  --wc-ink-2: #3f3f3f;         /* body and summary copy */
+  --wc-muted: #6b6b6b;         /* labels, axis ticks (>= 4.5:1) */
+
+  /* Meaning */
+  --wc-accent: #0a72e8;        /* the one highlighted series */
+  --wc-accent-soft: #d8e8fc;   /* context marks, area fills */
+  --wc-accent-ink: #0657b8;    /* accent-colored text */
+  --wc-compare: #8c8c8c;       /* last period, benchmark line (>= 3:1) */
+  --wc-compare-soft: #e3e3e3;
+  --wc-positive: #10935f;
+  --wc-positive-soft: #e3f6ea;
+  --wc-positive-ink: #0b6e34;
+  --wc-negative: #dc383d;
+  --wc-negative-soft: #fde9ea;
+  --wc-negative-ink: #b42329;
+  --wc-warning: #c27a00;
+  --wc-warning-soft: #fdf1dc;
+  --wc-warning-ink: #8a5300;
+
+  /* Categorical: use in order. Neighbors differ in hue AND lightness so they survive CVD. */
+  --wc-cat-1: #0a72e8;  /* blue */
+  --wc-cat-2: #e8590c;  /* orange */
+  --wc-cat-3: #14866d;  /* teal green */
+  --wc-cat-4: #b13f8a;  /* plum */
+  --wc-cat-5: #521af9;  /* violet */
+  --wc-cat-6: #06626b;  /* teal */
+  --wc-cat-7: #84520b;  /* umber */
+  --wc-cat-8: #5f524e;  /* warm gray: "Other" */
+
+  /* Sequential (low -> high). Light theme: darker = more. Built in OKLCH on the accent hue so
+     each step is about 1.4x the contrast of the one before: 1.6, 2.25, 3.15, 4.4, 6.2, 8.8 to 1
+     on the surface. Step 1 must be >= 1.5:1 and neighbors >= 1.3:1 apart (contrast.mjs checks). */
+  --wc-seq-0: #ededec;  /* zero, not "no data" (neutral, so zero never reads as "a little") */
+  --wc-seq-1: #afcffb;
+  --wc-seq-2: #7baff9;
+  --wc-seq-3: #4791f7;
+  --wc-seq-4: #1b76e6;
+  --wc-seq-5: #145fbc;
+  --wc-seq-6: #0d4993;
+
+  /* Tooltip */
+  --wc-tip-bg: #161616;
+  --wc-tip-ink: #ffffff;
+  --wc-tip-muted: #a8a8a8;
+
+  --wc-focus: #0a72e8;
+  --wc-ribbon-mix: 22%;   /* Sankey ribbon tint, mixed in OKLCH toward --wc-ribbon-base */
+  --wc-ribbon-base: var(--wc-surface);
+
+  /* Shape and type */
+  --wc-radius-card: 24px;
+  --wc-radius-tip: 12px;
+  --wc-font: "Geist", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --wc-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px -12px rgba(0, 0, 0, 0.08);
+
+  /* Motion: one curve, four durations. JS mirrors these in lib.ts (EASE, DUR). */
+  --wc-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --wc-dur-press: 120ms;   /* press, hover color */
+  --wc-dur-focus: 200ms;   /* tooltip move, highlight fade */
+  --wc-dur-update: 450ms;  /* data change */
+  --wc-dur-entry: 700ms;   /* first draw */
+}
+
+/* Dark tokens apply on screen only. Printed pages always use the light set (ink on paper). */
+@media not print {
+.dark, [data-theme="dark"] {
+  --wc-page: #0a0a0b;
+  --wc-surface: #151517;
+  --wc-surface-2: #1d1d20;
+  --wc-track: #2a2a2e;
+  --wc-grid: #242428;
+  --wc-hairline: #2c2c31;
+  --wc-axis: #75757c;
+
+  --wc-ink: #f4f4f5;
+  --wc-ink-2: #d0d0d4;
+  --wc-muted: #9d9da4;
+
+  --wc-accent: #3d95ff;
+  --wc-accent-soft: #15304f;
+  --wc-accent-ink: #8cc0ff;
+  --wc-compare: #7a7a82;
+  --wc-compare-soft: #2e2e33;
+  --wc-positive: #2fbc8a;
+  --wc-positive-soft: #0f2a1a;
+  --wc-positive-ink: #6ad995;
+  --wc-negative: #f65a5f;
+  --wc-negative-soft: #3a1518;
+  --wc-negative-ink: #ff9196;
+  --wc-warning: #f0a020;
+  --wc-warning-soft: #33240b;
+  --wc-warning-ink: #ffc560;
+
+  --wc-cat-1: #3d95ff;
+  --wc-cat-2: #ff7a2e;
+  --wc-cat-3: #3ccf9f;
+  --wc-cat-4: #c2479a;
+  --wc-cat-5: #745fdd;
+  --wc-cat-6: #9fb8db;
+  --wc-cat-7: #cf966e;
+  --wc-cat-8: #94959e;
+
+  /* Dark theme: lighter = more. Same contrast steps against the dark surface. */
+  --wc-seq-0: #242428;
+  --wc-seq-1: #083a70;
+  --wc-seq-2: #0f4f97;
+  --wc-seq-3: #1665bd;
+  --wc-seq-4: #1d7ce5;
+  --wc-seq-5: #4b98f7;
+  --wc-seq-6: #84b7f9;
+
+  --wc-tip-bg: #2a2a2f;
+  --wc-tip-ink: #ffffff;
+  --wc-tip-muted: #a9a9b0;
+  --wc-focus: #6aaeff;
+  --wc-ribbon-mix: 40%;   /* dark: mix toward a mid gray, not black, so orange stays orange, not brown */
+  --wc-ribbon-base: #55555d;
+  --wc-shadow-card: 0 0 0 1px rgba(255, 255, 255, 0.04), 0 12px 32px -16px rgba(0, 0, 0, 0.6);
+}
+} /* end @media not print */
+
+/* More contrast: labels reach 7:1 (AAA), dividers and the card ring reach 3:1, gridlines darken.
+   On when the OS asks (prefers-contrast: more) or when ChartPrefs sets data-wc-contrast="more".
+   Categorical colors do not change: they already pass 3:1 and the CVD check. */
+[data-wc-contrast="more"] {
+  --wc-ink-2: #262626; --wc-muted: #4a4a4a; --wc-axis: #595959; --wc-compare: #6b6b6b;
+  --wc-hairline: #8a8a8a; --wc-grid: #c8c8c8; --wc-track: #d0d0d0; --wc-tip-muted: #c8c8c8;
+}
+@media (prefers-contrast: more) {
+  :root {
+  --wc-ink-2: #262626; --wc-muted: #4a4a4a; --wc-axis: #595959; --wc-compare: #6b6b6b;
+  --wc-hairline: #8a8a8a; --wc-grid: #c8c8c8; --wc-track: #d0d0d0; --wc-tip-muted: #c8c8c8;
+  }
+}
+@media not print {
+  [data-wc-contrast="more"] .dark, [data-wc-contrast="more"].dark, [data-wc-contrast="more"] [data-theme="dark"], [data-wc-contrast="more"][data-theme="dark"] {
+  --wc-ink-2: #e8e8ec; --wc-muted: #c4c4ca; --wc-axis: #a3a3ab; --wc-compare: #a3a3ab;
+  --wc-hairline: #6c6c74; --wc-grid: #3a3a40; --wc-track: #3c3c42; --wc-tip-muted: #c8c8ce;
+  }
+  @media (prefers-contrast: more) {
+    .dark, [data-theme="dark"] {
+  --wc-ink-2: #e8e8ec; --wc-muted: #c4c4ca; --wc-axis: #a3a3ab; --wc-compare: #a3a3ab;
+  --wc-hairline: #6c6c74; --wc-grid: #3a3a40; --wc-track: #3c3c42; --wc-tip-muted: #c8c8ce;
+    }
+  }
+}
+
+/* Patterns (ChartPrefs): each categorical slot gets its own texture, so parts stay apart in
+   grayscale, on paper and for color blind readers. Marks opt in with data-wc-pat="1".."8";
+   PatternDefs (prefs.tsx) holds the SVG patterns. HTML keys use matching CSS gradients. */
+[data-wc-patterns] svg [data-wc-pat="1"] { fill: url(#wc-pat-1) !important; }
+[data-wc-patterns] svg [data-wc-pat="2"] { fill: url(#wc-pat-2) !important; }
+[data-wc-patterns] svg [data-wc-pat="3"] { fill: url(#wc-pat-3) !important; }
+[data-wc-patterns] svg [data-wc-pat="4"] { fill: url(#wc-pat-4) !important; }
+[data-wc-patterns] svg [data-wc-pat="5"] { fill: url(#wc-pat-5) !important; }
+[data-wc-patterns] svg [data-wc-pat="6"] { fill: url(#wc-pat-6) !important; }
+[data-wc-patterns] svg [data-wc-pat="7"] { fill: url(#wc-pat-7) !important; }
+[data-wc-patterns] svg [data-wc-pat="8"] { fill: url(#wc-pat-8) !important; }
+[data-wc-patterns] svg [data-wc-ghost] { fill-opacity: 0.4; }
+[data-wc-patterns] .wc-swatch[data-wc-pat] { width: 12px; border-radius: 3px; }
+[data-wc-patterns] .wc-swatch[data-wc-pat="2"] { background-image: repeating-linear-gradient(45deg, var(--wc-surface) 0 1.5px, transparent 1.5px 5px); }
+[data-wc-patterns] .wc-swatch[data-wc-pat="3"] { background-image: radial-gradient(circle, var(--wc-surface) 0.8px, transparent 1.1px); background-size: 5px 5px; background-position: 1px 1px; }
+[data-wc-patterns] .wc-swatch[data-wc-pat="4"] { background-image: repeating-linear-gradient(0deg, var(--wc-surface) 0 1.5px, transparent 1.5px 4.5px); }
+[data-wc-patterns] .wc-swatch[data-wc-pat="5"] { background-image: repeating-linear-gradient(45deg, var(--wc-surface) 0 1px, transparent 1px 4px), repeating-linear-gradient(-45deg, var(--wc-surface) 0 1px, transparent 1px 4px); }
+[data-wc-patterns] .wc-swatch[data-wc-pat="6"] { background-image: repeating-linear-gradient(90deg, var(--wc-surface) 0 1.5px, transparent 1.5px 4.5px); }
+[data-wc-patterns] .wc-swatch[data-wc-pat="7"] { background-image: repeating-linear-gradient(-45deg, var(--wc-surface) 0 1.5px, transparent 1.5px 5px); }
+[data-wc-patterns] .wc-swatch[data-wc-pat="8"] { background-image: linear-gradient(45deg, var(--wc-surface) 25%, transparent 25% 75%, var(--wc-surface) 75%); background-size: 5px 5px; }
+
+/* Tailwind v4 utilities: bg-wc-surface, text-wc-muted, ring-wc-hairline, rounded-wc-card, font-wc ... */
+@theme inline {
+  --color-wc-page: var(--wc-page);
+  --color-wc-surface: var(--wc-surface);
+  --color-wc-surface-2: var(--wc-surface-2);
+  --color-wc-track: var(--wc-track);
+  --color-wc-grid: var(--wc-grid);
+  --color-wc-hairline: var(--wc-hairline);
+  --color-wc-axis: var(--wc-axis);
+  --color-wc-ink: var(--wc-ink);
+  --color-wc-ink-2: var(--wc-ink-2);
+  --color-wc-muted: var(--wc-muted);
+  --color-wc-accent: var(--wc-accent);
+  --color-wc-accent-soft: var(--wc-accent-soft);
+  --color-wc-accent-ink: var(--wc-accent-ink);
+  --color-wc-compare: var(--wc-compare);
+  --color-wc-positive: var(--wc-positive);
+  --color-wc-positive-soft: var(--wc-positive-soft);
+  --color-wc-positive-ink: var(--wc-positive-ink);
+  --color-wc-negative: var(--wc-negative);
+  --color-wc-negative-soft: var(--wc-negative-soft);
+  --color-wc-negative-ink: var(--wc-negative-ink);
+  --color-wc-warning: var(--wc-warning);
+  --color-wc-warning-soft: var(--wc-warning-soft);
+  --color-wc-warning-ink: var(--wc-warning-ink);
+  --color-wc-tip-bg: var(--wc-tip-bg);
+  --color-wc-tip-ink: var(--wc-tip-ink);
+  --color-wc-tip-muted: var(--wc-tip-muted);
+  --color-wc-focus: var(--wc-focus);
+  --radius-wc-card: var(--wc-radius-card);
+  --radius-wc-tip: var(--wc-radius-tip);
+  --font-wc: var(--wc-font);
+  --ease-wc: var(--wc-ease);
+}
+
+/* Skeleton shimmer. Off under reduced motion. */
+@keyframes wc-shimmer { from { background-position: 150% 0; } to { background-position: -50% 0; } }
+.wc-skeleton {
+  background: linear-gradient(90deg, var(--wc-surface-2) 30%, var(--wc-track) 50%, var(--wc-surface-2) 70%);
+  background-size: 200% 100%;
+  animation: wc-shimmer 1.4s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wc-skeleton { animation: none; }
+  .wc-motion { transition: none !important; }
+}
+
+/* Keyboard help line in ChartCard: visible only while a plot inside the card has keyboard focus. */
+.wc-keyhint { display: none; }
+.wc-card:has([data-wc-plot]:focus-visible, .recharts-surface:focus-visible, .recharts-wrapper:focus-visible) .wc-keyhint { display: block; }
+
+/* Forced colors (Windows High Contrast). Map tokens to system colors so the user's palette wins.
+   Marks become CanvasText or Highlight; tints drop out; text stays readable. */
+@media (forced-colors: active) {
+  /* Forced colors drop box-shadow, and the focus rings are box-shadow rings. Draw a real outline. */
+  .wc-card :focus-visible { outline: 2px solid Highlight !important; outline-offset: 2px; }
+  :root, .dark, [data-theme="dark"], [data-brand] {
+    --wc-page: Canvas; --wc-surface: Canvas; --wc-surface-2: Canvas; --wc-track: GrayText;
+    --wc-grid: GrayText; --wc-hairline: CanvasText; --wc-axis: CanvasText;
+    --wc-ink: CanvasText; --wc-ink-2: CanvasText; --wc-muted: CanvasText;
+    --wc-accent: Highlight; --wc-accent-soft: Canvas; --wc-accent-ink: CanvasText;
+    --wc-compare: GrayText; --wc-compare-soft: Canvas;
+    --wc-positive: CanvasText; --wc-positive-soft: Canvas; --wc-positive-ink: CanvasText;
+    --wc-negative: CanvasText; --wc-negative-soft: Canvas; --wc-negative-ink: CanvasText;
+    --wc-warning: CanvasText; --wc-warning-soft: Canvas; --wc-warning-ink: CanvasText;
+    --wc-cat-1: Highlight; --wc-cat-2: CanvasText; --wc-cat-3: Highlight; --wc-cat-4: CanvasText;
+    --wc-cat-5: Highlight; --wc-cat-6: CanvasText; --wc-cat-7: Highlight; --wc-cat-8: CanvasText;
+    --wc-seq-0: Canvas; --wc-seq-1: GrayText; --wc-seq-2: GrayText; --wc-seq-3: CanvasText;
+    --wc-seq-4: CanvasText; --wc-seq-5: Highlight; --wc-seq-6: Highlight;
+    --wc-tip-bg: Canvas; --wc-tip-ink: CanvasText; --wc-tip-muted: CanvasText;
+    --wc-focus: Highlight; --wc-ribbon-mix: 0%; --wc-ribbon-base: Canvas;
+  }
+  [data-wc-tip] { border: 1px solid CanvasText; }
+}
+
+/* Print: no hover UI or buttons, cards never split across pages, colors print as shown. */
+@media print {
+  [data-wc-tip], .wc-noprint, .wc-keyhint { display: none !important; }
+  .wc-card { break-inside: avoid; box-shadow: none; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+}

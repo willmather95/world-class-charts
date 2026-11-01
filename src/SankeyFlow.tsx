@@ -11,7 +11,7 @@
 import { ChartCard, SparseNote, Tip, TipRow, type StateProps } from "./ChartCard";
 import { fmt, fmtPercent, type NumKind } from "./format";
 import { LiveRegion, usePlotNav } from "./interaction";
-import { c, cat, dodge, sizeOf, soft, sum, useTween, useWidth } from "./lib";
+import { c, cat, dodge, isNum, sizeOf, soft, sum, useTween, useWidth } from "./lib";
 
 /** Resting ribbon: a tint mixed in OKLab (keeps hue instead of going brown on dark), plus a 1px
  *  full-color edge for 3:1. In dark mode ribbons mix toward a mid gray (--wc-ribbon-base), because a tint mixed toward black turns orange brown. */
@@ -130,7 +130,7 @@ export function SankeyFlow({
   const table = !empty ? {
     caption: title,
     columns: ["From", "To", "Amount", "Share of from"],
-    rows: lay.links.map((l) => [l.s.label, l.t.label, fmt(real(l), kind, { compact: false }), fmtPercent(share(l))]),
+    rows: lay.links.map((l) => [l.s.label, l.t.label, ...(isNum(links[l.i]?.value) ? [fmt(real(l), kind, { compact: false }), fmtPercent(share(l))] : ["n/a", "n/a"])]),
   } : undefined;
 
   return (

@@ -17,7 +17,7 @@ same way in the hero, the axis, the tooltip and the table.
 | A change that rounds to zero gets no sign | 0% | `fmtDelta` |
 | Rate changes are points, not percent | +0.4 pts | `fmtDelta(v, "points")` |
 | Change from zero is "New", not infinity | New | `pctChange` returns `null` |
-| Missing is "No data", not 0 | No data | templates |
+| Missing is never 0 | n/a from every formatter (null, undefined, NaN); "No data" in rows and cells that are missing | `fmt*`, templates |
 | Tabular figures on every number | `tabular-nums` | CSS |
 
 ## Axes

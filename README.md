@@ -1,6 +1,6 @@
 # world-class-charts
 
-18 React chart and KPI components with every state, dark mode, keyboard support and brand theming built in. They draw plain SVG and HTML, so there is no chart library to install.
+18 React chart and KPI components with every state, dark mode and brand theming built in. 11 plotted charts add arrow-key navigation; the other 7 carry their values as text and have no key model. They draw plain SVG and HTML, so there is no chart library to install.
 
 Built for React 19 and Tailwind CSS v4. MIT licensed.
 
@@ -120,13 +120,25 @@ Add `class="dark"` or `data-theme="dark"` to a parent element. The tokens switch
 
 To apply a brand, remap the `--wc-*` tokens. Never pass hex values to a chart. Start from `src/themes/brand-example.css`, then follow `docs/references/theming.md`. With the package, import the example as `world-class-charts/themes/brand-example.css`.
 
+## Use it as an agent skill
+
+`docs/SKILL.md` is a ready-made skill for Claude Code and other agents that read `SKILL.md` files. The file is in `docs/`, so link that folder, not the repo root. Clone the repo, then symlink:
+
+```bash
+git clone https://github.com/willmather95/world-class-charts ~/world-class-charts
+mkdir -p ~/.claude/skills
+ln -s ~/world-class-charts/docs ~/.claude/skills/world-class-charts
+```
+
+The templates stay in the clone, in `src/` one level above `SKILL.md`. The checker in `docs/harness/` works through the link.
+
 ## Docs
 
 - `docs/SKILL.md`: the full recipe, from picking a chart to shipping it
 - `docs/references/`: guides for chart choice, formatting, labeling, interaction, accessibility, states, responsive layout, motion, dark mode, Recharts and QA
 - `docs/harness/`: the checker, with a strict typecheck, a contrast test, Playwright and axe tests, and a Recharts demo
 
-To run the checker (it uses your installed Chrome, or set `CHROME_PATH`):
+The checker lives in the repo, not in the installed package (the package ships `src`, `SKILL.md` and the references). Clone the repo to run it. It uses your installed Chrome, or set `CHROME_PATH`:
 
 ```bash
 cd docs/harness

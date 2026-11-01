@@ -5,10 +5,10 @@
 import { useId } from "react";
 import { ChartCard, DeltaPill, type StateProps } from "./ChartCard";
 import { fmt, type NumKind, type Polarity } from "./format";
-import { c, linePath, monotonePath, useTween, useWidth, type Pt } from "./lib";
+import { c, isNum, linePath, monotonePath, useTween, useWidth, type Pt } from "./lib";
 
 export function KpiSparkCard({
-  title, value, kind = "number", delta, polarity = "up-good", note = "vs last period", series = [], color = c.accent,
+  title, value, kind = "number", delta, polarity = "up-good", note = "vs last period", series: seriesIn = [], color = c.accent,
   showMinMax = false, source, ...state
 }: StateProps & {
   title: string;
@@ -18,12 +18,14 @@ export function KpiSparkCard({
   delta?: number | null;
   polarity?: Polarity;
   note?: string;
-  series?: number[];
+  /** Readings, oldest first. Missing ones (null) are skipped and the line joins across them. */
+  series?: (number | null)[];
   color?: string;
   /** Mark the low and high points (Tufte's sparkline convention). */
   showMinMax?: boolean;
   source?: string;
 }) {
+  const series = seriesIn.filter(isNum);
   const gid = useId().replace(/:/g, "");
   const [wrap, w] = useWidth<HTMLDivElement>(260);
   const s = useTween(series);
@@ -36,7 +38,7 @@ export function KpiSparkCard({
   const iMin = series.indexOf(min), iMax = series.indexOf(max);
 
   return (
-    <ChartCard title={title} action={null} source={source} empty={value == null} skeleton="stat" bodyHeight={128} {...state}>
+    <ChartCard title={title} source={source} empty={value == null} skeleton="stat" bodyHeight={128} {...state}>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <span className="text-[30px] font-semibold leading-none tracking-[-0.03em] tabular-nums @md:text-[34px]">{value != null ? fmt(value, kind) : ""}</span>
         {delta !== undefined && <DeltaPill delta={delta} polarity={polarity} label={note} />}

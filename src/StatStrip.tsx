@@ -51,7 +51,7 @@ export function StatStrip({ title, items, source, bare = false, status = "ready"
   );
   if (bare && status !== "error") return <section aria-label={title} aria-busy={status === "loading" || undefined} className="@container font-wc text-wc-ink">{grid}</section>;
   return (
-    <ChartCard title={title} action={null} source={source} empty={items.length === 0} skeleton="stat" bodyHeight={96} status={status === "loading" ? "ready" : status} {...state}>
+    <ChartCard title={title} source={source} empty={items.length === 0} skeleton="stat" bodyHeight={96} status={status === "loading" ? "ready" : status} {...state}>
       {grid}
     </ChartCard>
   );

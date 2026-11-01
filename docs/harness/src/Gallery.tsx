@@ -127,6 +127,22 @@ function Set({ dark, title, brand }: { dark?: boolean; title: string; brand?: st
         <TrendAreaChart title="Sparse data" subtitle="Two readings so far" data={trend.slice(0, 2)} kind="currency" />
         <StackedBars title="Empty state" series={series} data={[]} emptyText="No visits in this range yet." />
         <div className="md:col-span-2 xl:col-span-1"><GoalProgress title="Goal reached" value={21000} goal={20000} kind="currency" /></div>
+        <Span2><TrendAreaChart title="Bad data: trend" subtitle="Two readings are missing, so the line joins across them" kind="currency"
+          events={[{ index: 5, text: "Event" }]}
+          data={[4200, 4800, null, 5200, null, 5900, 6300, 6100].map((value, i) => ({ date: new Date(2026, i, 1), value }))} source="Sample data" /></Span2>
+        <Span2><TrendAreaChart title="Bad data: forecast" subtitle="A gap right at the forecast start" forecastFrom={3}
+          data={[10, 20, 30, null, 50, 60].map((value, i) => ({ date: new Date(2026, i, 1), value }))} source="Sample data" /></Span2>
+        <Span2><TrendAreaChart title="Bad data: all forecast" subtitle="No reading before the forecast start" forecastFrom={1}
+          data={[null, null, 30, 40].map((value, i) => ({ date: new Date(2026, i, 1), value }))} source="Sample data" /></Span2>
+        <Span2><PairedBars title="Bad data: paired" subtitle="A negative month and a missing reading" kind="currency" activeIndex={1} data={[
+          { label: "Jan", a: 2400, b: 1800 }, { label: "Feb", a: -900, b: 1500 }, { label: "Mar", a: 2100, b: null }, { label: "Apr", a: 1900, b: -600 },
+        ]} /></Span2>
+        <StackedBars title="Bad data: stacked" subtitle="A missing value and a negative one are not drawn" series={series} data={[
+          { label: "Jan", values: [300, 200, 100, 40] }, { label: "Feb", values: [300, -100, 200, null] }, { label: "Mar", values: [320, 180, 90, 50] },
+        ]} />
+        <StackedBars title="Bad data: all negative" subtitle="Nothing to draw, but the data is not empty" series={series} data={[
+          { label: "Jan", values: [-300, -200, -100, -40] }, { label: "Feb", values: [-250, -150, -90, -30] },
+        ]} />
       </div>
     </section>
   );

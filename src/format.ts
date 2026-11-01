@@ -6,6 +6,8 @@
 // - Same decimals across one axis.
 
 const MINUS = "\u2212";
+/** Missing values (null, undefined, NaN, Infinity) print "n/a", never "0". */
+type Num = number | null | undefined;
 let locale = "en-US";
 
 // Building an Intl formatter is slow (tens of microseconds). A 10,000-point chart formats every
@@ -21,7 +23,8 @@ function nf(o: Intl.NumberFormatOptions): Intl.NumberFormat {
 let defaultCurrency = "USD";
 
 /** Set the locale and currency once at app start: configureFormat({ locale: "de-DE", currency: "EUR" }).
- *  Every number, date and axis label then follows it. Charts keep a left-to-right plot in RTL pages. */
+ *  Every number, date and axis label then follows it; interface words (View data, Forecast, Net) stay
+ *  English. Charts keep a left-to-right plot in RTL pages. */
 export function configureFormat(o: { locale?: string; currency?: string }) {
   if (o.locale) locale = o.locale;
   if (o.currency) defaultCurrency = o.currency;
@@ -46,8 +49,8 @@ function defaultDecimals(n: number) {
 /** Sign for a value shown at d decimals: no minus when it rounds to zero, so -0.004 reads "0". */
 const sign = (n: number, d: number) => (n < 0 && Number(Math.abs(n).toFixed(Math.max(0, d))) !== 0 ? MINUS : "");
 
-export function fmtNumber(n: number, o: FmtOpts = {}): string {
-  if (!isFinite(n)) return "n/a";
+export function fmtNumber(n: Num, o: FmtOpts = {}): string {
+  if (n == null || !Number.isFinite(n)) return "n/a";
   const compact = o.compact ?? Math.abs(n) >= 10_000;
   const d = o.decimals ?? (compact ? 1 : defaultDecimals(n));
   const s = nf({
@@ -57,8 +60,8 @@ export function fmtNumber(n: number, o: FmtOpts = {}): string {
   return (compact ? (n < 0 ? MINUS : "") : sign(n, d)) + s;
 }
 
-export function fmtCurrency(n: number, o: FmtOpts = {}): string {
-  if (!isFinite(n)) return "n/a";
+export function fmtCurrency(n: Num, o: FmtOpts = {}): string {
+  if (n == null || !Number.isFinite(n)) return "n/a";
   const compact = o.compact ?? Math.abs(n) >= 10_000;
   const d = o.decimals ?? (compact ? 1 : Math.abs(n) >= 100 || Number.isInteger(n) ? 0 : 2);
   const s = nf({
@@ -73,8 +76,8 @@ export function fmtCurrency(n: number, o: FmtOpts = {}): string {
 
 /** ratio 0.142 -> "14.2%". Honest at the edges (Datawrapper rule): a value that is not zero never
  *  prints "0%" (shows "<0.1%"), and a share under 100% never prints "100%" (shows "99.9%"). */
-export function fmtPercent(ratio: number, decimals?: number): string {
-  if (!isFinite(ratio)) return "n/a";
+export function fmtPercent(ratio: Num, decimals?: number): string {
+  if (ratio == null || !Number.isFinite(ratio)) return "n/a";
   const p = ratio * 100, a = Math.abs(p);
   const d = decimals ?? (a >= 10 || Number.isInteger(p) ? 0 : 1);
   const step = 10 ** -Math.max(d, 1);
@@ -87,15 +90,15 @@ export function fmtPercent(ratio: number, decimals?: number): string {
   return sign(p, d) + num(a, d) + "%";
 }
 
-export function fmt(n: number, kind: NumKind = "number", o: FmtOpts = {}): string {
+export function fmt(n: Num, kind: NumKind = "number", o: FmtOpts = {}): string {
   return kind === "currency" ? fmtCurrency(n, o) : kind === "percent" ? fmtPercent(n, o.decimals) : fmtNumber(n, o);
 }
 
 /** Signed delta. kind "percent" takes a ratio (0.12 -> "+12%"). "points" for rate changes (+2.1 pts). */
-export function fmtDelta(n: number, kind: NumKind | "points" = "percent", o: FmtOpts = {}): string {
-  if (!isFinite(n)) return "n/a";
+export function fmtDelta(n: Num, kind: NumKind | "points" = "percent", o: FmtOpts = {}): string {
+  if (n == null || !Number.isFinite(n)) return "n/a";
   const body =
-    kind === "points" ? `${Math.abs(n).toFixed(o.decimals ?? 1).replace(/\.0$/, "")} pts` : fmt(Math.abs(n), kind, o);
+    kind === "points" ? `${nf({ maximumFractionDigits: o.decimals ?? 1, minimumFractionDigits: 0 }).format(Math.abs(n))} pts` : fmt(Math.abs(n), kind, o);
   if (body.replace(/[^1-9]/g, "") === "") return body; // rounds to zero: no sign
   return (n > 0 ? "+" : MINUS) + body;
 }
@@ -168,6 +171,11 @@ const df = (o: Intl.DateTimeFormatOptions): Intl.DateTimeFormat => {
   return f;
 };
 
+/** Short month name ("Oct", "Okt"): axis and heatmap labels. */
+export const fmtMonth = (d: Date): string => df({ month: "short" }).format(d);
+/** Short weekday name ("Mon", "Mo."). */
+export const fmtWeekday = (d: Date): string => df({ weekday: "short" }).format(d);
+
 /** Tooltip and table date: full context. */
 export function fmtDate(d: Date, grain: Grain = "day"): string {
   switch (grain) {
@@ -197,7 +205,7 @@ export function timeTicks(dates: Date[], grain: Grain): { label: string; sub?: s
   return dates.map((d, i) => {
     const prev = dates[i - 1];
     if (grain === "month" || grain === "quarter") {
-      const label = grain === "month" ? df({ month: "short" }).format(d) : `Q${Math.floor(d.getMonth() / 3) + 1}`;
+      const label = grain === "month" ? fmtMonth(d) : `Q${Math.floor(d.getMonth() / 3) + 1}`;
       return { label, sub: !prev || prev.getFullYear() !== d.getFullYear() ? String(d.getFullYear()) : undefined };
     }
     if (grain === "year") return { label: String(d.getFullYear()) };

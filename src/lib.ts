@@ -171,6 +171,8 @@ export function pickIndices(n: number, max: number): number[] {
 }
 
 /* ---------- Scales ---------- */
+/** A real, finite number: false for null, undefined, NaN and Infinity. */
+export const isNum = (v: unknown): v is number => Number.isFinite(v);
 export const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 export const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
 

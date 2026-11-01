@@ -8,7 +8,7 @@
 // Narrow cards show the most recent weeks that fit and say so.
 // States: loading, error, empty (no days), all zero, sparse (few days).
 import { ChartCard, SparseNote, Tip, type StateProps } from "./ChartCard";
-import { fmt, fmtDate, type NumKind } from "./format";
+import { fmt, fmtDate, fmtMonth, fmtWeekday, type NumKind } from "./format";
 import { LiveRegion, usePlotNav } from "./interaction";
 import { c, seq, useWidth } from "./lib";
 
@@ -74,14 +74,14 @@ export function CalendarHeatmap({
       <div ref={wrap}>
         <div {...nav.bind} role="group" aria-roledescription="calendar heatmap" aria-label={`${title}. ${keys.length} days, total ${fmt(total, kind)}. Arrow keys move by day and week.`} style={{ ...nav.bind.style, height: plotH }}>
           <svg width={labelW + weeks * (cell + gap)} height={plotH} className="block" aria-hidden>
-            {["Mon", "Wed", "Fri"].map((d, i) => (
-              <text key={d} x={0} y={topH + (i * 2) * (cell + gap) + cell - 2} fontSize="12" fill={c.muted}>{d}</text>
+            {[0, 1, 2].map((i) => fmtWeekday(new Date(2024, 0, 1 + i * 2))).map((d, i) => (
+              <text key={i} x={0} y={topH + (i * 2) * (cell + gap) + cell - 2} fontSize="12" fill={c.muted}>{d}</text>
             ))}
             {Array.from({ length: weeks }, (_, w) => {
               const d = days[w * 7];
               const prev = w ? days[(w - 1) * 7] : null;
               return (!prev || prev.getMonth() !== d.getMonth()) && w < weeks - 1 ? (
-                <text key={w} x={labelW + w * (cell + gap)} y={11} fontSize="12" fill={c.muted}>{d.toLocaleString("en-US", { month: "short" })}</text>
+                <text key={w} x={labelW + w * (cell + gap)} y={11} fontSize="12" fill={c.muted}>{fmtMonth(d)}</text>
               ) : null;
             })}
             {days.map((_, i) => {

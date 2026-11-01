@@ -5,6 +5,8 @@ https://chartability.fizz.studio/ . Scope: the 18 chart templates as shown in th
 gallery, in light, dark and the brand theme, plus the Recharts demo. Re-audited the same day
 after the gap work: position in the live text, jump keys, table sort, shared state, top-item
 summaries, the series picker, patterns and more contrast, and Firefox and WebKit runs.
+Re-audited on 2026-11-01 after a code review. Three rows that claimed "every chart" were checked
+against the templates and moved from Pass to Fail (2, 30 and 48). No other row was changed.
 
 Chartability counts failures. It is not a pass mark. When a test is unclear, the workbook says to
 assume a failure. "Not verified" means we had no way to test it here. Most of those need a real
@@ -15,13 +17,13 @@ would settle them.
 
 | | Count |
 |---|---|
-| Pass | 45 |
-| Fail | 1 |
+| Pass | 42 |
+| Fail | 4 |
 | Not verified | 2 |
 | Not applicable | 2 |
-| **Pass share** | **45 of 48 that apply (94%)**, 45 of 50 overall (90%) |
+| **Pass share** | **42 of 48 that apply (88%)**, 42 of 50 overall (84%) |
 | Before the gap work | 38 of 48 (79%) |
-| Critical fails | 0 of 14. Two critical tests are not verified (11 and 38). |
+| Critical fails | 2 of 14 (2 and 30). Two critical tests are not verified (11 and 38). |
 
 Evidence key: **C** = `contrast.mjs`, **T** = Playwright test in `docs/harness/tests/`, **G** = gallery
 review, **D** = design rule in the templates.
@@ -31,7 +33,7 @@ review, **D** = design rule in the templates.
 | # | Heuristic | Result | Evidence |
 |---|---|---|---|
 | 1 | Low contrast (critical) | Pass | C: text 4.5:1, marks and focus ring 3:1, 0 fails in 4 themes. More contrast: text 7:1, dividers 3:1 |
-| 2 | Content is only visual (critical) | Pass | T: labeled group, captioned table, live region on every chart |
+| 2 | Content is only visual (critical) | **Fail** | T: the 11 plotted charts have a labeled group, a captioned table and a live region. 6 of the 7 others carry text equivalents (meter or progressbar value text, labeled rows, list text, sparkline trend words). `KpiSparkCard`: the sparkline is hidden from assistive tech with no text alternative |
 | 3 | Small text size (critical) | Pass | T: no visible text under 12px |
 | 4 | Seizure risk (critical) | Pass | D: no flashing. Shimmer is slow and off under reduced motion |
 | 5 | Color alone carries meaning | Pass | D: arrows and signs on pills, stripes when over, dashed forecasts |
@@ -79,7 +81,7 @@ review, **D** = design rule in the templates.
 
 | # | Heuristic | Result | Evidence |
 |---|---|---|---|
-| 30 | No table (critical) | Pass | T: View data on every chart, plus CSV |
+| 30 | No table (critical) | **Fail** | T: 13 of 18 have View data and CSV. `KpiSparkCard`, `BudgetCard` and `GoalProgress` have none. `SparkTable` is itself a table and `StatStrip` is text |
 | 31 | Only one way in | Pass | Visual, table, live text, CSV and sound (S key) |
 | 32 | Location and history unclear | Pass | T: live text ends "3 of 12", after the value. Small multiples add "chart 2 of 8" |
 | 33 | Interactions not forgiving | Pass | Esc clears. Nothing is destructive |
@@ -107,7 +109,7 @@ review, **D** = design rule in the templates.
 | 45 | Scrolling can't be changed | N/A | No scroll-driven story |
 | 46 | No zoom or reflow | Pass | T: 320px reflow, no sideways scroll |
 | 47 | Text changes ignored | Pass | T: text spacing test |
-| 48 | Not consistent | Pass | D: one key and pointer model in every chart |
+| 48 | Not consistent | **Fail** | D: 10 charts share one key model (`usePlotNav`) and `SmallMultiples` has its own handler with the same keys. 7 have none: `BudgetCard`, `CategoryBreakdown` (a tab stop per row, no arrows), `DeltaBars`, `GoalProgress`, `KpiSparkCard`, `SparkTable`, `StatStrip` |
 | 49 | Contrast and textures fixed | Pass | T: `ChartPrefs` toggles Patterns and More contrast, kept across visits. The OS high-contrast setting turns More contrast on by itself |
 | 50 | Hard chart, no alternative | Pass | Sankey, radial and heatmap all have a table and CSV |
 
@@ -115,6 +117,9 @@ review, **D** = design rule in the templates.
 
 | # | Gap | Fix | Size |
 |---|---|---|---|
+| 2 | `KpiSparkCard` sparkline has no text alternative | Give the sparkline a `role="img"` label with the trend in words, as `Spark` does | Small, under an hour |
+| 30 | `KpiSparkCard`, `BudgetCard` and `GoalProgress` have no View data table or CSV | Add a `table` to each | Small, about an hour each |
+| 48 | 7 templates have no arrow-key model (`BudgetCard`, `CategoryBreakdown`, `DeltaBars`, `GoalProgress`, `KpiSparkCard`, `SparkTable`, `StatStrip`) | Either say plainly that text cards need none, or add `usePlotNav` to `DeltaBars` and `CategoryBreakdown` | Medium, a day |
 | 42 | Picker on stacks only. No chart type switch | Add `picker` to PairedBars and SmallMultiples. A "Show as table or bars" switch | Medium, 1 to 2 days |
 | 11, 38 | No real screen reader run | Run `voiceover-test-script.md` on a Mac, and the same steps in NVDA on Windows | 10 minutes each, needs the machines |
 | 29 | WebKit is not iOS Safari | One pass on an iPhone with VoiceOver | 10 minutes, needs a phone |

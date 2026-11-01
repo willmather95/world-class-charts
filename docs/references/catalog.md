@@ -11,7 +11,7 @@ a screenshot and says "make one like that".
 | Cash flow / in vs out | Paired columns, one period lit | `PairedBars` | Net in tooltip |
 | Low-to-high range per item | Floating bars, optional marker tick | `RangeBars` | Axis need not start at 0 |
 | Before vs after per item (dumbbell) | Hollow dot, line, solid dot | `RangeBars variant="dumbbell"` | Set `polarity` |
-| Monthly bars, one lit | Columns, latest full color | `PairedBars` with one series, or `StackedBars` with one series | |
+| Monthly bars, one lit | Columns | `StackedBars` with one series, hover or focus lights one | |
 | Stacked mix over time | Stacked or 100% columns | `StackedBars` | 5 parts at most |
 | This vs last per item | Bars with a previous tick | `DeltaBars` | |
 | Change per item | Diverging bars around zero | `DeltaBars mode="change"` | Set `polarity` |
@@ -24,4 +24,8 @@ a screenshot and says "make one like that".
 | Headline KPIs | Row of stats split by hairlines | `StatStrip` | |
 | Single KPI | Number, pill, sparkline | `KpiSparkCard` | |
 | Flow between groups (sankey) | Ribbons from sources to uses | `SankeyFlow` (own layout, no library) | 2-3 columns, about 12 nodes |
+| Many small trends, same scale | Grid of mini lines, synced crosshair | `SmallMultiples` | Replaces a 5+ line chart |
+| Value vs target per item | Thin bar over gray bands, target tick | `BulletChart` | Replaces gauges; each row has its own scale |
+| Bridge from start to end | Floating steps on a running total | `Waterfall` | Gains and losses by polarity |
+| Rank change between two points | Two columns joined by slope lines | `SlopeChart` | Name 1-3 items with `highlight` |
 | Unit split (hex or dot grid) | Grid of units in 2-3 colors | Adapt `BudgetCard` dots | Pair with numbers |

@@ -11,7 +11,8 @@ height (`h-fit`) and never stretches to match a neighbor.
 | Empty | Loaded, no rows | An icon, "No data yet", one line about why or what to do. Keep the frame. | `empty`, `emptyText` |
 | Single point | One reading | The number, no line. "Trend shows after two readings." | automatic |
 | Sparse | 2-3 points | Straight segments with markers on each point and a note. No smoothing. | automatic |
-| Missing values | Gaps in a series | A gap or an outlined cell, never a zero. "No data" in the tooltip. | `null` values |
+| Missing values | `null` in the data | Never a zero. Formatters and table cells print "n/a"; rows and cells that are missing say "No data". Line charts: `TrendAreaChart` joins the line across the gap and a note says how many readings are missing (the table keeps every row); `SmallMultiples` breaks the line; `CalendarHeatmap` outlines the cell. Bars: `PairedBars` draws no bar for the missing side and its net reads "n/a"; `StackedBars` does not draw it and a note says so. | `null` values |
+| Negative | Value below zero | `PairedBars` diverges: the axis gains negative ticks and bars grow down from the zero line. `StackedBars` is parts of a whole, so a negative part is not drawn, a note says so, and the table shows the real value. | automatic |
 | Zero | Real zero | Draw the zero. In heatmaps, `seq-0` is zero and is different from no data. | automatic |
 | New item | Previous value is 0 | "New" instead of a percent change. | `pctChange` returns `null` |
 | Over limit | used > limit | Negative color plus stripes plus words ("Over the limit by $600"). | `BudgetCard` |
@@ -23,9 +24,9 @@ height (`h-fit`) and never stretches to match a neighbor.
 
 | Template | Loading | Error | Empty | Single | Sparse | Special |
 |---|---|---|---|---|---|---|
-| TrendAreaChart | line | yes | yes | yes | markers | forecast, target, annotations |
-| PairedBars | bars | yes | yes | yes | yes | active period |
-| StackedBars | bars | yes | yes | yes | yes | zero-total column |
+| TrendAreaChart | line | yes | yes | yes | markers | forecast, target, annotations, gaps joined with a note |
+| PairedBars | bars | yes | yes | yes | yes | active period, negatives diverge |
+| StackedBars | bars | yes | yes | yes | yes | zero-total column, negatives not drawn |
 | DeltaBars | rows | yes | yes | yes | n/a | previous 0 = "New" |
 | GoalProgress | progress | yes | goal <= 0 | n/a | n/a | done, on pace, behind |
 | BudgetCard | grid | yes | limit <= 0 | n/a | n/a | warn, over limit |

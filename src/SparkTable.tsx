@@ -7,7 +7,7 @@
 import { useState } from "react";
 import { ChartCard, DeltaPill, type StateProps } from "./ChartCard";
 import { fmt, fmtPercent, pctChange, type NumKind, type Polarity } from "./format";
-import { c, linePath, monotonePath, sum, type Pt } from "./lib";
+import { c, isNum, linePath, monotonePath, sum, type Pt } from "./lib";
 
 export type SparkRow = { label: string; value: number; previous?: number; series: number[]; sublabel?: string };
 type SortKey = "label" | "value" | "change" | "share";
@@ -75,7 +75,7 @@ export function SparkTable({
                   <td className="hidden px-2 @lg:table-cell">
                     <div className="ml-auto flex w-[120px] items-center gap-2">
                       <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-wc-track"><div className="h-full rounded-full bg-wc-accent" style={{ width: `${(r.share / maxShare) * 100}%` }} /></div>
-                      <span className="w-9 text-right text-[12px] text-wc-muted">{fmtPercent(r.share)}</span>
+                      <span className="w-9 text-right text-[12px] text-wc-muted">{isNum(r.value) ? fmtPercent(r.share) : "n/a"}</span>
                     </div>
                   </td>
                 )}

@@ -21,6 +21,12 @@ sentence. Then pick the chart. If two charts fit, pick the one with fewer marks.
 | When are we busy? (day by day patterns) | Calendar heatmap (`CalendarHeatmap`) | Columns by weekday | Line over 365 points |
 | Many items, each with a trend | Table with sparklines (`SparkTable`) | Small multiples | One line chart with 10 lines |
 | A cyclical pattern by month or hour | `RadialBars` only as a hero visual, with a list | Columns | Radial for exact comparisons |
+| Where did the total come from, and where did it go? | Flow ribbons (`SankeyFlow`) | `StackedBars`, table | Sankey past 3 columns or about 12 nodes |
+| What moved the total from start to end? | Bridge of signed steps (`Waterfall`) | `DeltaBars mode="change"` | Stacked bars across two periods |
+| Who rose and who fell between two points in time? | Slope lines (`SlopeChart`) | `RangeBars variant="dumbbell"` | A line chart with 8+ lines |
+| Is each measure on target? | Bullet bars with bands (`BulletChart`) | `GoalProgress` for one measure | Gauges and dials |
+| Where does each item sit between a low and a high? | Floating bars (`RangeBars`) | Table with min and max | Bars from zero when only the spread matters |
+| How do many series trend, side by side? | Small multiples on one scale (`SmallMultiples`) | `SparkTable` | One line chart with 5+ lines |
 
 ## Rules of thumb
 

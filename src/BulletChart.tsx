@@ -97,7 +97,7 @@ export function BulletChart({
                   return <rect key={k} x={a + (k ? 1 : 0)} y={top} width={Math.max(0, b - a - (k ? 1 : 0))} height={bandH} fill={soft(c.ink, shade ?? 6)} />;
                 })}
                 {r.value != null && <rect x={x(0)} y={top + bandH / 2 - 3.5} width={Math.max(0, x(vals[i]) - x(0))} height={7} rx={1.5} fill={c.accent} />}
-                {r.target != null && <rect x={x(r.target) - 1} y={top - 4} width={2.5} height={bandH + 8} rx={1} fill={c.ink} />}
+                {r.target != null && <rect x={x(Math.max(0, r.target)) - 1} y={top - 4} width={2.5} height={bandH + 8} rx={1} fill={c.ink} />}
                 {!stacked && (
                   <g fontSize="13" textAnchor="end" className="tabular-nums">
                     <text x={width} y={top + 7} fill={c.ink} fontWeight={600}>{r.value == null ? "No data" : fmt(r.value, kind)}</text>
@@ -109,7 +109,7 @@ export function BulletChart({
           })}
         </svg>
         {h != null && data[h] && (
-          <Tip x={xs[h](data[h].value ?? 0)} y={h * rowH + rowH - 4} bound={width}>
+          <Tip x={xs[h](Math.max(0, data[h].value ?? 0))} y={h * rowH + rowH - 4} bound={width}>
             <div className="mb-1 text-[12px] text-wc-tip-muted">{data[h].label}</div>
             <TipRow color={c.accent} label="Actual" value={data[h].value == null ? "No data" : fmt(data[h].value as number, kind, { compact: false })} />
             {data[h].target != null && <TipRow color={c.ink} label={targetLabel} value={fmt(data[h].target as number, kind, { compact: false })} />}

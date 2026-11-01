@@ -23,7 +23,7 @@ every state, and fits the brand. This skill is the recipe and the parts.
 2. **Write the takeaway as the subtitle.** "Spending is up 12% since June." The title names the
    measure. The subtitle says what it means.
 3. **Start from a template** (list below). Copy `src/` into the app (for example
-   `components/charts/`), add `@import "./tokens.css";` after `@import "tailwindcss";`, and
+   `components/charts/`; in the repo, `src/` sits one level above this file), add `@import "./tokens.css";` after `@import "tailwindcss";`, and
    import from `index.ts`. Templates are plain SVG and HTML: React 19, TS strict, Tailwind v4.
 4. **Theme with tokens, never hex.** Map the brand onto the `--wc-*` roles with
    `references/theming.md` (8-step walkthrough, example in `src/themes/brand-example.css`).
@@ -77,7 +77,8 @@ is now `PairedBars`, and the `spent` prop on `BudgetCard` is now `used`.
 
 ## Check your work
 
-`docs/harness/` holds the checker. Run `npm i` in that folder, then:
+`docs/harness/` holds the checker. It is in the repo, not in the installed package, so clone the
+repo to run it. Run `npm i` in that folder, then:
 
 - `./build.sh` copies the templates, runs `tsc --noEmit` (strict) and builds the gallery.
 - `node contrast.mjs` checks every text and mark pair in light, dark, the brand example and More

@@ -1,7 +1,7 @@
 // Pure helper tests: no browser. Edge cases from the benchmark teardown (sources.md).
 import { test, expect } from "@playwright/test";
 import { dodge, lttb, niceTicks, pickIndices } from "../src/templates/lib";
-import { fmt, fmtDelta, fmtPercent, speak, configureFormat } from "../src/templates/format";
+import { fmt, fmtCurrency, fmtDelta, fmtMonth, fmtNumber, fmtPercent, fmtWeekday, speak, configureFormat } from "../src/templates/format";
 import { toCsv, sortValue, sortRows } from "../src/templates/interaction";
 
 test("lttb keeps the ends and the spikes", () => {
@@ -76,4 +76,46 @@ test("sortRows sorts by number, puts blanks last, and keeps ties in order", () =
   expect(sortRows(rows, (r) => r[0], 0, "desc").map((r) => r[0])).toEqual(["e", "d", "c", "b", "a"]);
   const text = [["x", "beta"], ["y", "Alpha"], ["z", "item 10"], ["w", "item 9"]];
   expect(sortRows(text, col, 1, "asc").map((r) => r[1])).toEqual(["Alpha", "beta", "item 9", "item 10"]);
+});
+
+test("missing values print n/a, never 0", () => {
+  for (const bad of [null, undefined, NaN, Infinity]) {
+    expect(fmtNumber(bad)).toBe("n/a");
+    expect(fmtCurrency(bad)).toBe("n/a");
+    expect(fmtPercent(bad)).toBe("n/a");
+    expect(fmtDelta(bad)).toBe("n/a");
+    expect(fmt(bad, "currency")).toBe("n/a");
+  }
+  expect(fmt(0)).toBe("0");
+});
+
+test("month and weekday labels follow the configured locale", () => {
+  try {
+    configureFormat({ locale: "de-DE" });
+    expect(fmtMonth(new Date(2026, 9, 1))).toMatch(/^Okt/);
+    expect(fmtMonth(new Date(2026, 11, 1))).toMatch(/^Dez/);
+    expect(fmtWeekday(new Date(2024, 0, 1))).toMatch(/^Mo/);
+  } finally {
+    configureFormat({ locale: "en-US" });
+  }
+  expect(fmtMonth(new Date(2026, 9, 1))).toBe("Oct");
+  expect(fmtWeekday(new Date(2024, 0, 3))).toBe("Wed");
+});
+
+test("sortRows treats n/a and No data as blanks, so a numeric column stays numeric", () => {
+  const rows = [["a", "$900"], ["b", "$1,000"], ["c", "n/a"], ["d", "$50"], ["e", "No data"]];
+  const col = (r: string[]) => r[1];
+  expect(sortRows(rows, col, 1, "asc").map((r) => r[1])).toEqual(["$50", "$900", "$1,000", "n/a", "No data"]);
+  expect(sortRows(rows, col, 1, "desc").map((r) => r[1])).toEqual(["$1,000", "$900", "$50", "n/a", "No data"]);
+});
+
+test("rate changes in points follow the locale decimal mark", () => {
+  try {
+    configureFormat({ locale: "de-DE" });
+    expect(fmtDelta(2.1, "points")).toBe("+2,1 pts");
+  } finally {
+    configureFormat({ locale: "en-US" });
+  }
+  expect(fmtDelta(2.1, "points")).toBe("+2.1 pts");
+  expect(fmtDelta(-3, "points")).toBe("\u22123 pts");
 });

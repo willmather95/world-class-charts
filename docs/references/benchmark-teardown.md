@@ -14,8 +14,8 @@ link is in `sources.md`.
 | 5 | Waterfall and slope chart types | FT Visual Vocabulary | `Waterfall.tsx`, `SlopeChart.tsx` |
 | 6 | Palette checked under simulated color blindness | Machado 2009, Datawrapper, Carbon | CVD section of `contrast.mjs` |
 | 7 | Hear the shape of the data | Highcharts sonification, Apple Audio Graphs | `sound.ts`, S key |
-| 8 | Data table and CSV behind every chart | Carbon, W3C WAI, Highcharts export | `DataTable`, 500-row DOM cap |
-| 9 | Full keyboard model with a hint on focus | Highcharts, Material, Chartability | `usePlotNav`, key hint |
+| 8 | Data table and CSV behind 13 of the 18 charts | Carbon, W3C WAI, Highcharts export | `DataTable`, 500-row DOM cap |
+| 9 | Full keyboard model with a hint on focus (the 11 plotted charts) | Highcharts, Material, Chartability | `usePlotNav`, key hint |
 | 10 | Hold up under user styles | Chartability, WCAG 1.4.10 and 1.4.12 | forced colors CSS, spacing and reflow tests |
 
 Also adopted:
@@ -66,6 +66,6 @@ Also adopted:
 
 ## Gaps against the best
 
-- Highcharts lets you jump by series and announces "3 of 12". We do neither yet.
-- Datawrapper tables can sort and search. Our `DataTable` cannot.
-- Carbon and Highcharts offer pattern fills. We offer forced colors only.
+- Done: the live text ends with the position ("3 of 12"), `DataTable` sorts, and the Patterns toggle adds fills.
+- Still short: Highcharts jumps between series. Our plots have one series (arrows move by period), so there is no jump by series.
+- Still short: Datawrapper tables sort and search. Our `DataTable` sorts but has no search.

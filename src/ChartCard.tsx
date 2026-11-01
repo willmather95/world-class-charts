@@ -29,8 +29,8 @@ export function ChartCard({
   /** One line under the title. Best used for the takeaway, not a restated title. */
   subtitle?: ReactNode;
   icon?: ReactNode;
-  /** Right side of the header. Defaults to the "..." button. Pass null to hide. */
-  action?: ReactNode | null;
+  /** Right side of the header: your own button or menu. Nothing renders when absent. */
+  action?: ReactNode;
   /** Footer note: source and freshness, e.g. "Source: Billing. Updated 9:00 AM CT". */
   source?: ReactNode;
   /** Table fallback. Screen readers always get it; a "View data" toggle shows it to everyone. */
@@ -70,7 +70,7 @@ export function ChartCard({
           </h3>
           {subtitle && <p className="mt-1 text-[13px] leading-snug text-wc-muted">{subtitle}</p>}
         </div>
-        {action === undefined ? <MoreButton /> : action}
+        {action}
       </header>
 
       {status === "loading" ? (
@@ -113,18 +113,6 @@ export function ChartCard({
       {ready && <p aria-hidden className="wc-keyhint pointer-events-none absolute inset-x-5 bottom-1 truncate text-[12px] text-wc-muted @md:inset-x-6">{keyHint}{keys ? ` ${keys}` : ""}</p>}
       <div aria-live="polite" className="sr-only">{said}</div>
     </section>
-  );
-}
-
-export function MoreButton({ label = "More options" }: { label?: string }) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      className="wc-noprint grid size-9 shrink-0 place-items-center rounded-full text-wc-muted ring-1 ring-wc-hairline transition-[transform,background-color] duration-[var(--wc-dur-press)] hover:bg-wc-surface-2 focus-visible:outline-2 focus-visible:outline-wc-focus active:scale-95"
-    >
-      <svg width="14" height="4" viewBox="0 0 14 4" fill="currentColor" aria-hidden><circle cx="2" cy="2" r="1.5" /><circle cx="7" cy="2" r="1.5" /><circle cx="12" cy="2" r="1.5" /></svg>
-    </button>
   );
 }
 

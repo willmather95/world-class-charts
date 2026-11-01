@@ -7,7 +7,7 @@
 // chart offers it. A polite live region reads the active value in spoken form, then "3 of 12".
 // Wrap a chart in <ShareState id="..."> to keep its active point and table sort in the page URL.
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type KeyboardEvent, type PointerEvent, type ReactNode } from "react";
-import { speak } from "./format";
+import { getLocale, speak } from "./format";
 import { clamp } from "./lib";
 import { playSeries, stopSound } from "./sound";
 
@@ -194,7 +194,8 @@ const decSort = (v: string | null): Sort => { const m = v?.match(/^(\d+)([ad])$/
 export function sortRows<T>(rows: T[], cell: (r: T) => string | number, col: number, dir: "asc" | "desc"): T[] {
   if (col === 0) return dir === "desc" ? [...rows].reverse() : rows;
   const keyed = rows.map((r, i) => ({ r, i, v: cell(r), n: sortValue(cell(r)) }));
-  const numeric = keyed.every((k) => k.n != null || k.v === "" || k.v === "\u2014");
+  const blank = (v: string | number) => v === "" || v === "\u2014" || v === "n/a" || v === "No data";
+  const numeric = keyed.every((k) => k.n != null || blank(k.v));
   const sign = dir === "asc" ? 1 : -1;
   keyed.sort((a, b) => {
     if (numeric) {
@@ -259,7 +260,7 @@ export function DataTable({ spec, visible }: { spec: DataTableSpec; visible: boo
           {cut > 0 && (
             <tr className="border-t border-wc-hairline">
               <td colSpan={spec.columns.length} className="px-3 py-2 text-wc-muted">
-                Showing the first {TABLE_ROW_CAP.toLocaleString()} of {spec.rows.length.toLocaleString()} rows. Download the CSV for all of them.
+                Showing the first {TABLE_ROW_CAP.toLocaleString(getLocale())} of {spec.rows.length.toLocaleString(getLocale())} rows. Download the CSV for all of them.
               </td>
             </tr>
           )}

@@ -554,3 +554,145 @@ test("every button is at least 24px in its smaller side (WCAG 2.5.8)", async ({ 
     .filter((b) => b.s > 0 && b.s < 24));
   expect(small).toEqual([]);
 });
+
+test.describe("bad data", () => {
+  // Wait for the entrance tween, then read every mark's box.
+  const marksInside = async (page: Page, c: Locator, title: string) => {
+    await expect.poll(async () => c.locator("svg path[fill^='var(--wc-cat']").count(), title).toBeGreaterThan(0);
+    await page.waitForTimeout(900);
+    const cb = (await c.boundingBox())!;
+    const boxes = await c.locator("svg").first().locator("path, rect, text, line").evaluateAll((els) => els.map((e) => { const r = e.getBoundingClientRect(); return [r.left, r.top, r.right, r.bottom, r.width + r.height]; }));
+    for (const [l, t, r, b, size] of boxes) {
+      if (!size) continue;
+      expect(l, `${title} left`).toBeGreaterThanOrEqual(cb.x - 1);
+      expect(t, `${title} top`).toBeGreaterThanOrEqual(cb.y - 1);
+      expect(r, `${title} right`).toBeLessThanOrEqual(cb.x + cb.width + 1);
+      expect(b, `${title} bottom`).toBeLessThanOrEqual(cb.y + cb.height + 1);
+    }
+  };
+
+  test("trend: a missing reading is not plotted as 0, the table says n/a, a note says so", async ({ page }) => {
+    await page.goto(url());
+    const c = card(page, "Bad data: trend");
+    await c.scrollIntoViewIfNeeded();
+    await expect(c.getByText("2 of 8 readings have no value and are not plotted. View data shows them.")).toBeVisible();
+    const zero = c.locator('svg line[stroke="var(--wc-axis)"]').first();
+    const line = c.locator('svg path[stroke="var(--wc-accent)"]').first();
+    // The line settles well above the zero gridline. A null plotted as 0 would drag it down to it.
+    await expect.poll(async () => {
+      const z = (await zero.boundingBox())!, l = (await line.boundingBox())!;
+      return z.y - (l.y + l.height);
+    }, { timeout: 5000 }).toBeGreaterThan(30);
+    await c.getByRole("button", { name: "View data" }).click();
+    await expect(c.locator("table tbody td", { hasText: /^n\/a$/ })).toHaveCount(2);
+    await expect(c.locator("table tbody tr")).toHaveCount(8);
+  });
+
+  test("trend: a gap keeps its width, events sit at the raw position, the pointer picks the nearest reading, the summary counts honestly", async ({ page }) => {
+    await page.goto(url());
+    const c = card(page, "Bad data: trend");
+    await c.scrollIntoViewIfNeeded();
+    await expect(plot(c)).toHaveAttribute("aria-label", /6 readings of 8 months/);
+    const plotW = Number(await c.locator('svg line[stroke="var(--wc-grid)"]').first().getAttribute("x2"));
+    // The event is on raw index 5 of 0..7, after two gaps: 5/7 of the plot, not 3/5 or the end.
+    const ev = Number(await c.locator('svg line[stroke-dasharray="2 3"]').first().getAttribute("x1"));
+    expect(Math.abs(ev - (plotW * 5) / 7)).toBeLessThan(1);
+    // 6.4 of 0..7 is closest to July (raw 6), not to the evenly spaced guess.
+    const box = (await plot(c).boundingBox())!;
+    await page.mouse.move(box.x + (plotW * 6.4) / 7, box.y + box.height * 0.5);
+    await expect(tip(c)).toContainText("July");
+  });
+
+  test("trend: a gap at the forecast start never labels a real actual as forecast", async ({ page }) => {
+    await page.goto(url());
+    const c = card(page, "Bad data: forecast");
+    await c.scrollIntoViewIfNeeded();
+    await expect(c.getByText("This period, latest actual")).toBeVisible();
+    await expect(c).toContainText(/latest actual\s*30\b/);
+    await c.getByRole("button", { name: "View data" }).click();
+    const rows = c.locator("table tbody tr");
+    await expect(rows.nth(2)).not.toContainText("forecast"); // 30 is an actual
+    await expect(rows.nth(4)).toContainText("(forecast)");
+    await expect(rows.nth(5)).toContainText("(forecast)");
+  });
+
+  test("trend: with no reading before the forecast start, nothing is called actual", async ({ page }) => {
+    await page.goto(url());
+    const c = card(page, "Bad data: all forecast");
+    await c.scrollIntoViewIfNeeded();
+    await expect(c.getByText("This period, forecast")).toBeVisible();
+    await expect(c).not.toContainText("latest actual");
+  });
+
+  test("paired: negatives grow below a zero line with a negative tick and stay inside the card; null is n/a", async ({ page }) => {
+    await page.goto(url());
+    const c = card(page, "Bad data: paired");
+    await c.scrollIntoViewIfNeeded();
+    await expect(c.locator("svg text").filter({ hasText: /^\u2212/ }).first()).toBeAttached();
+    await marksInside(page, c, "paired");
+    await c.getByRole("button", { name: "View data" }).click();
+    const row = c.locator("table tbody tr", { hasText: "Mar" });
+    await expect(row).toContainText("n/a"); // the missing side
+    await expect(row.locator("td").last()).toHaveText("n/a"); // net is unknown, not $2,100
+    // The tooltip says the same.
+    await c.getByRole("button", { name: "Hide data" }).click();
+    const box = (await plot(c).boundingBox())!;
+    await page.mouse.move(box.x + ((box.width - 48) * 2.5) / 4, box.y + box.height * 0.4);
+    await expect(tip(c)).toContainText(/Net\s*n\/a/);
+  });
+
+  test("paired: ghost bars stay on their own side of the zero line, the negative label sits under its bar and clears the x label", async ({ page }) => {
+    await page.goto(url());
+    const c = card(page, "Bad data: paired");
+    await c.scrollIntoViewIfNeeded();
+    await expect.poll(async () => c.locator("svg path[data-wc-ghost]").count()).toBeGreaterThan(0);
+    await page.waitForTimeout(900);
+    const m = await c.locator("svg").first().evaluate((svg) => {
+      const box = (e: Element) => e.getBoundingClientRect();
+      const zero = box(svg.querySelector('line[stroke="var(--wc-axis)"]')!).top;
+      const ghosts = [...svg.querySelectorAll("path[data-wc-ghost]")].map((e) => [box(e).top, box(e).bottom]);
+      const bars = [...svg.querySelectorAll("path[data-wc-pat]:not([data-wc-ghost])")].map((e) => box(e).bottom);
+      const texts = [...svg.querySelectorAll("text")].map((e) => ({ t: e.textContent ?? "", top: box(e).top, bottom: box(e).bottom, bold: e.parentElement?.getAttribute("font-weight") === "600" || e.getAttribute("font-weight") === "600" }));
+      return { zero, ghosts, lowestBar: Math.max(...bars), texts };
+    });
+    for (const [top, bottom] of m.ghosts) expect(top >= m.zero - 0.01 || bottom <= m.zero + 0.01, `ghost ${top}-${bottom} vs zero ${m.zero}`).toBe(true);
+    const neg = m.texts.find((t) => t.bold && t.t.startsWith("\u2212"))!;
+    expect(neg.top, "label under the bar").toBeGreaterThanOrEqual(m.lowestBar - 0.5);
+    const xlabel = m.texts.find((t) => t.t === "Feb" && t.bold)!;
+    expect(neg.bottom, "clears the x label").toBeLessThanOrEqual(xlabel.top + 0.5);
+  });
+
+  test("stacked: missing and negative values are not drawn, a note says so, the table keeps them", async ({ page }) => {
+    await page.goto(url());
+    const c = card(page, "Bad data: stacked");
+    await c.scrollIntoViewIfNeeded();
+    await expect(c.getByText("2 values are missing or negative and are not drawn. View data has them.")).toBeVisible();
+    await marksInside(page, c, "stacked");
+    await c.getByRole("button", { name: "View data" }).click();
+    const row = c.locator("table tbody tr", { hasText: "Feb" });
+    await expect(row).toContainText("n/a");
+    await expect(row).toContainText("\u2212100");
+    await expect(row.locator("td").last()).toHaveText("500"); // the drawn total: 300 + 200
+    await expect(c.locator("table thead th", { hasText: "Drawn total" })).toHaveCount(1);
+    // The label above the column and the tooltip agree with the table.
+    await c.getByRole("button", { name: "Hide data" }).click();
+    await expect(c.locator("svg text", { hasText: /^500$/ })).toHaveCount(1);
+    const box = (await plot(c).boundingBox())!;
+    await page.mouse.move(box.x + 44 + ((box.width - 44 - Math.min(120, box.width * 0.2)) * 1.5) / 3, box.y + box.height * 0.5);
+    await expect(tip(c)).toContainText(/Drawn total\s*500/);
+  });
+
+  test("stacked: all-negative data keeps the frame, the note and View data (not 'No data yet')", async ({ page }) => {
+    await page.goto(url());
+    const c = card(page, "Bad data: all negative");
+    await c.scrollIntoViewIfNeeded();
+    await expect(c.getByText("8 values are missing or negative and are not drawn. View data has them.")).toBeVisible();
+    await expect(c.getByRole("button", { name: "View data" })).toBeVisible();
+    await expect(c.getByText("No data yet")).toHaveCount(0);
+  });
+
+  test("no template ships a default 'More options' button", async ({ page }) => {
+    await page.goto(url());
+    await expect(page.getByRole("button", { name: "More options" })).toHaveCount(0);
+  });
+});

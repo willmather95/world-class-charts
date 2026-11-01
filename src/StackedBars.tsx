@@ -3,16 +3,18 @@
 // Only the bottom segment shares a baseline, so put the series that matters most first.
 // Thin surface gaps separate segments (Atlassian). Direct labels sit to the right of the last
 // column on wider cards; on phones a key moves above the plot. Totals sit on top in counts mode.
+// A stack is parts of a whole, so only values above zero are drawn. Missing (null) and negative
+// values are not drawn and a note says so; the table keeps the real values.
 // States: loading, error, empty, single column, zero-total column (drawn as an empty slot).
 // picker: toggle chips (aria-pressed) above the plot let the reader hide parts; totals follow.
 import { useState } from "react";
 import { ChartCard, LegendKey, SparseNote, Swatch, Tip, TipRow, type StateProps } from "./ChartCard";
 import { axisFormatter, fmt, fmtPercent, type NumKind } from "./format";
 import { LiveRegion, usePlotNav } from "./interaction";
-import { barPath, c, cat, catPat, maxTicksFor, niceTicks, pickIndices, scaleLinear, sizeOf, sum, useTween, useWidth } from "./lib";
+import { barPath, c, cat, catPat, isNum, maxTicksFor, niceTicks, pickIndices, scaleLinear, sizeOf, sum, useTween, useWidth } from "./lib";
 
 export type StackSeries = { key: string; label: string; color?: string };
-export type StackPoint = { label: string; values: number[] };
+export type StackPoint = { label: string; values: (number | null)[] };
 
 export function StackedBars({
   title, subtitle, series, data, mode = "stacked", kind = "number", height = 240, picker = false, source, ...state
@@ -42,15 +44,19 @@ export function StackedBars({
   const colors = series.map((s, i) => s.color ?? cat(i));
   // Pattern slot for the pattern toggle (prefs.tsx). Custom colors opt out: the fill would not match.
   const pat = (k: number) => (series[k].color ? undefined : catPat(k));
-  const shownV = (d: StackPoint) => d.values.map((v, k) => (on(k) ? v : 0));
+  const drawn = (v: number | null | undefined) => (isNum(v) && v > 0 ? v : 0);
+  const shownV = (d: StackPoint) => d.values.map((v, k) => (on(k) ? drawn(v) : 0));
   const totals = data.map((d) => sum(shownV(d)));
-  const allTotals = data.map((d) => sum(d.values));
+  const allTotals = data.map((d) => sum(d.values.map(drawn)));
+  const bad = data.reduce((a, d) => a + d.values.filter((v) => !isNum(v) || v < 0).length, 0);
+  // One definition of total: what is drawn. Say so when some cells are not.
+  const totalLabel = bad > 0 ? "Drawn total" : "Total";
   const norm = data.map((d, i) => shownV(d).map((v) => (mode === "percent" ? (totals[i] ? v / totals[i] : 0) : v)));
   const anim = useTween(norm.flat());
   const direct = size !== "sm" && series.length <= 6;
   const vis = series.map((_, k) => k).filter(on);
   // Summary facts: the biggest part over the whole range and the peak period.
-  const partSum = series.map((_, k) => sum(data.map((d) => d.values[k] ?? 0)));
+  const partSum = series.map((_, k) => sum(data.map((d) => drawn(d.values[k]))));
   const grand = sum(partSum);
   const big = partSum.indexOf(Math.max(...partSum));
   const peak = allTotals.indexOf(Math.max(...allTotals));
@@ -77,12 +83,12 @@ export function StackedBars({
   for (let k = 1; k < lab.length; k++) if (lab[k - 1].y - lab[k].y < 15) lab[k].y = lab[k - 1].y - 15;
   const table = n ? {
     caption: title,
-    columns: ["Period", ...series.map((s) => s.label), "Total"],
-    rows: data.map((d, i) => [d.label, ...d.values.map((v) => (mode === "percent" ? `${fmt(v, kind, { compact: false })} (${fmtPercent(allTotals[i] ? v / allTotals[i] : 0)})` : fmt(v, kind, { compact: false }))), fmt(allTotals[i], kind, { compact: false })]),
+    columns: ["Period", ...series.map((s) => s.label), totalLabel],
+    rows: data.map((d, i) => [d.label, ...d.values.map((v) => (mode === "percent" && drawn(v) > 0 ? `${fmt(v, kind, { compact: false })} (${fmtPercent(drawn(v) / allTotals[i])})` : fmt(v, kind, { compact: false }))), fmt(allTotals[i], kind, { compact: false })]),
   } : undefined;
 
   return (
-    <ChartCard title={title} subtitle={subtitle} source={source} table={table} empty={n === 0 || sum(totals) === 0} skeleton="bars" bodyHeight={height + (direct ? 0 : 28)} {...state}>
+    <ChartCard title={title} subtitle={subtitle} source={source} table={table} empty={n === 0 || (sum(allTotals) === 0 && bad === 0)} skeleton="bars" bodyHeight={height + (direct ? 0 : 28)} {...state}>
       {picker ? (
         <div role="group" aria-label="Show parts" className="wc-noprint mb-3 flex flex-wrap gap-1.5">
           {series.map((s, k) => (
@@ -135,14 +141,15 @@ export function StackedBars({
           <Tip x={plotX + slot * h + slot / 2 + barW / 2} y={padT + 4} bound={plotX + plotW}>
             <div className="mb-1 text-[12px] text-wc-tip-muted">{data[h].label}</div>
             {[...series].map((s, k) => ({ s, k })).filter(({ k }) => on(k)).reverse().map(({ s, k }) => (
-              <TipRow key={s.key} pat={pat(k)} color={colors[k]} label={s.label} value={`${fmt(data[h].values[k], kind, { compact: false })}${mode === "percent" ? ` \u00b7 ${fmtPercent(totals[h] ? data[h].values[k] / totals[h] : 0)}` : ""}`} />
+              <TipRow key={s.key} pat={pat(k)} color={colors[k]} label={s.label} value={`${fmt(data[h].values[k], kind, { compact: false })}${mode === "percent" && drawn(data[h].values[k]) > 0 ? ` \u00b7 ${fmtPercent(drawn(data[h].values[k]) / totals[h])}` : ""}`} />
             ))}
-            <div className="mt-1.5 flex justify-between gap-3 border-t border-white/10 pt-1.5 text-[12px]"><span className="text-wc-tip-muted">Total</span><b className="font-medium">{fmt(totals[h], kind, { compact: false })}</b></div>
+            <div className="mt-1.5 flex justify-between gap-3 border-t border-white/10 pt-1.5 text-[12px]"><span className="text-wc-tip-muted">{totalLabel}</span><b className="font-medium">{fmt(totals[h], kind, { compact: false })}</b></div>
           </Tip>
         )}
-        <LiveRegion at={nav.pos} text={h != null && data[h] ? `${data[h].label}: ${vis.map((k) => `${series[k].label} ${fmt(data[h].values[k], kind)}`).join(", ")}. Total ${fmt(totals[h], kind)}` : ""} />
+        <LiveRegion at={nav.pos} text={h != null && data[h] ? `${data[h].label}: ${vis.map((k) => `${series[k].label} ${fmt(data[h].values[k], kind)}`).join(", ")}. ${totalLabel} ${fmt(totals[h], kind)}` : ""} />
       </div>
       {n === 1 && <SparseNote>One period so far.</SparseNote>}
+      {bad > 0 && <SparseNote>{bad} {bad === 1 ? "value is" : "values are"} missing or negative and {bad === 1 ? "is" : "are"} not drawn. View data has {bad === 1 ? "it" : "them"}.</SparseNote>}
     </ChartCard>
   );
 }

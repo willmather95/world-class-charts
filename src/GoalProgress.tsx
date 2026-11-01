@@ -4,7 +4,7 @@
 // Handles > 100% (the bar caps, the overflow is stated), no pace (no marker), and goal <= 0 (empty).
 import { ChartCard, Stat, type StateProps } from "./ChartCard";
 import { fmt, fmtPercent, type NumKind } from "./format";
-import { c, clamp, useTween } from "./lib";
+import { c, clamp, isNum, useTween } from "./lib";
 
 export function GoalProgress({
   title, subtitle, value, goal, kind = "number", pace, deadline, milestones = [], source, ...state
@@ -36,7 +36,7 @@ export function GoalProgress({
     : <span className="text-wc-muted">{fmt(goal - value, kind)} to go</span>;
 
   return (
-    <ChartCard title={title} subtitle={subtitle} source={source} empty={!(goal > 0)} emptyText="Set a goal to track progress." skeleton="progress" bodyHeight={128} {...state}>
+    <ChartCard title={title} subtitle={subtitle} source={source} empty={!(goal > 0) || !isNum(value)} emptyText={goal > 0 ? "No reading yet." : "Set a goal to track progress."} skeleton="progress" bodyHeight={128} {...state}>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <Stat label={`${fmt(value, kind)} of ${fmt(goal, kind)}${deadline ? ` ${deadline}` : ""}`} value={fmtPercent(ratio)} />
         <p className="flex items-center gap-1.5 pb-0.5 text-[13px] font-medium">

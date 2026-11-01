@@ -8,16 +8,17 @@
 import { useId } from "react";
 import { ChartCard, DeltaPill, SparseNote, Stat, Tip, TipRow, type StateProps } from "./ChartCard";
 import { axisFormatter, fmt, fmtDate, pctChange, timeTicks, type Grain, type NumKind, type Polarity } from "./format";
-import { LiveRegion, nearestIndex, usePlotNav } from "./interaction";
-import { c, linePath, lttb, maxTicksFor, monotonePath, niceTicks, pickIndices, scaleLinear, sizeOf, soft, useTween, useWidth, type Pt } from "./lib";
+import { LiveRegion, usePlotNav } from "./interaction";
+import { c, isNum, linePath, lttb, maxTicksFor, monotonePath, niceTicks, pickIndices, scaleLinear, sizeOf, soft, useTween, useWidth, type Pt } from "./lib";
 
-/** low/high: an uncertainty band (forecast range, confidence interval). Say what it is in bandLabel. */
-export type TrendPoint = { date: Date | string; value: number; compare?: number | null; low?: number | null; high?: number | null };
+/** value: null for a missing reading; the line joins across it and the table shows "n/a".
+ *  low/high: an uncertainty band (forecast range, confidence interval). Say what it is in bandLabel. */
+export type TrendPoint = { date: Date | string; value: number | null; compare?: number | null; low?: number | null; high?: number | null };
 
 export function TrendAreaChart({
-  title, subtitle, data, grain = "month", kind = "number", polarity = "up-good",
+  title, subtitle, data: raw, grain = "month", kind = "number", polarity = "up-good",
   valueLabel = "This period", compareLabel = "Last period",
-  target, annotations = [], events = [], forecastFrom, bandLabel = "Likely range", height = 240, source, ...state
+  target, annotations: annIn = [], events: evIn = [], forecastFrom: ffIn, bandLabel = "Likely range", height = 240, source, ...state
 }: StateProps & {
   title: string;
   subtitle?: string;
@@ -44,9 +45,24 @@ export function TrendAreaChart({
   const hintId = `${gid}-hint`;
   const [wrap, width] = useWidth<HTMLDivElement>(560);
   const size = sizeOf(width);
+  // Readings with no value are not drawn (never plotted as 0). The line joins across them, a note
+  // says so, and the table keeps every row. Each kept reading sits at its raw position on the time
+  // axis, so a gap keeps its width. Raw indices (notes, events, forecast) map to kept rows.
+  const kept = raw.map((d, i) => (isNum(d.value) ? i : -1)).filter((i) => i >= 0);
+  const data = kept.map((i) => raw[i]) as (TrendPoint & { value: number })[];
+  const at = (i: number) => kept.findIndex((k) => k >= i);
+  const dropped = raw.length - kept.length;
   const n = data.length;
-  const dates = data.map((d) => (d.date instanceof Date ? d.date : new Date(d.date)));
-  const hasCmp = n > 0 && data.every((d) => d.compare != null);
+  const annotations = annIn.map((a) => ({ ...a, index: at(a.index) })).filter((a) => a.index >= 0);
+  const events = evIn.map((e) => ({ ...e, index: at(e.index) })).filter((e) => e.index >= 0);
+  // Forecast maps backward: the last actual is the last kept reading at or before ffIn, so a real
+  // actual is never drawn or labeled as forecast.
+  const forecastFrom = ffIn != null ? Math.max(0, kept.filter((k) => k <= ffIn).length - 1) : undefined;
+  // No reading at or before the forecast start: every point is forecast, so none is called actual.
+  const noActual = ffIn != null && n > 0 && kept[0] > ffIn;
+  const toDate = (d: TrendPoint) => (d.date instanceof Date ? d.date : new Date(d.date));
+  const dates = data.map(toDate);
+  const hasCmp = n > 0 && data.every((d) => isNum(d.compare));
 
   const vals = useTween([...data.map((d) => d.value), ...(hasCmp ? data.map((d) => d.compare as number) : [])]);
   const v = vals.slice(0, n);
@@ -63,9 +79,17 @@ export function TrendAreaChart({
   const yMin = ticks[0], yMax = ticks[ticks.length - 1];
   const fmtAxis = axisFormatter(ticks, kind);
   const y = scaleLinear(yMin, yMax, padT + plotH, padT);
-  const x = (i: number) => (n <= 1 ? plotW / 2 : (i / (n - 1)) * plotW);
+  const x = (i: number) => (n <= 1 || raw.length <= 1 ? plotW / 2 : (kept[i] / (raw.length - 1)) * plotW);
+  // Nearest kept reading to a pointer x (binary search on raw position).
+  const nearestKept = (px: number) => {
+    if (n <= 1) return n ? 0 : null;
+    const rp = Math.min(1, Math.max(0, px / plotW)) * (raw.length - 1);
+    let lo = 0, hi = n - 1;
+    while (hi - lo > 1) { const m = (lo + hi) >> 1; if (kept[m] <= rp) lo = m; else hi = m; }
+    return Math.abs(kept[lo] - rp) <= Math.abs(kept[hi] - rp) ? lo : hi;
+  };
 
-  const nav = usePlotNav(n, (px) => nearestIndex(px, plotW, n), 1, () => data.map((d) => d.value), { marks: () => [...annotations, ...events].map((a) => a.index) });
+  const nav = usePlotNav(n, nearestKept, 1, () => data.map((d) => d.value), { marks: () => [...annotations, ...events].map((a) => a.index) });
   const h = nav.active;
 
   const lastActual = forecastFrom != null ? Math.min(forecastFrom, n - 1) : n - 1;
@@ -76,11 +100,11 @@ export function TrendAreaChart({
   const table = n ? {
     caption: `${title}, by ${grain}`,
     columns: ["Period", valueLabel, ...(hasCmp ? [compareLabel] : []), ...(hasBand ? [bandLabel] : [])],
-    rows: data.map((d, i) => [fmtDate(dates[i], grain) + (forecastFrom != null && i > forecastFrom ? " (forecast)" : ""), fmt(d.value, kind, { compact: false }), ...(hasCmp ? [fmt(d.compare as number, kind, { compact: false })] : []), ...(hasBand ? [d.low != null && d.high != null ? `${fmt(d.low, kind, { compact: false })} to ${fmt(d.high, kind, { compact: false })}` : ""] : [])]),
+    rows: raw.map((d, i) => [fmtDate(toDate(d), grain) + (ffIn != null && i > ffIn ? " (forecast)" : ""), fmt(d.value as number, kind, { compact: false }), ...(hasCmp ? [fmt(d.compare as number, kind, { compact: false })] : []), ...(hasBand ? [d.low != null && d.high != null ? `${fmt(d.low, kind, { compact: false })} to ${fmt(d.high, kind, { compact: false })}` : ""] : [])]),
   } : undefined;
 
   const summary = n
-    ? `${title}. ${n} ${grain}s from ${fmtDate(dates[0], grain)} to ${fmtDate(dates[n - 1], grain)}. Latest ${fmt(latest.value, kind)}. Low ${fmt(Math.min(...data.map((d) => d.value)), kind)}, high ${fmt(Math.max(...data.map((d) => d.value)), kind)}. ${n > 1 ? (latest.value > data[0].value ? "Up" : latest.value < data[0].value ? "Down" : "Flat") + " since the start." : ""}`
+    ? `${title}. ${dropped ? `${n} readings of ${raw.length} ${grain}s` : `${n} ${grain}s`} from ${fmtDate(dates[0], grain)} to ${fmtDate(dates[n - 1], grain)}. Latest ${fmt(latest.value, kind)}. Low ${fmt(Math.min(...data.map((d) => d.value)), kind)}, high ${fmt(Math.max(...data.map((d) => d.value)), kind)}. ${n > 1 ? (latest.value > data[0].value ? "Up" : latest.value < data[0].value ? "Down" : "Flat") + " since the start." : ""}`
     : title;
 
   const pts: Pt[] = v.map((val, i) => [x(i), y(val)]);
@@ -103,7 +127,7 @@ export function TrendAreaChart({
     ? `${linePath(bandIdx.map((i) => [x(i), y(data[i].high as number)] as Pt))}L${bandIdx.slice().reverse().map((i) => `${x(i).toFixed(1)},${y(data[i].low as number).toFixed(1)}`).join("L")}Z`
     : "";
   const base = y(Math.max(yMin, 0));
-  const area = actualPts.length > 1 ? `${path(actualPts)}L${x(lastActual)},${base}L0,${base}Z` : "";
+  const area = actualPts.length > 1 ? `${path(actualPts)}L${x(lastActual)},${base}L${x(0)},${base}Z` : "";
 
   // Dense series: tick at period starts (month, or day for hourly data) instead of at evenly
   // spaced raw points, so labels land on round dates ("Feb", "Mar"), not "16, 3, 19".
@@ -129,7 +153,7 @@ export function TrendAreaChart({
       <div className="mb-4 flex flex-wrap items-end gap-x-8 gap-y-3">
         {latest && (
           <Stat
-            label={forecastFrom != null ? `${valueLabel}, latest actual` : valueLabel}
+            label={noActual ? `${valueLabel}, forecast` : forecastFrom != null ? `${valueLabel}, latest actual` : valueLabel}
             value={fmt(latest.value, kind, { compact: false })}
             extra={n > 1 && <DeltaPill delta={delta} polarity={polarity} label={hasCmp ? `vs ${compareLabel.toLowerCase()}` : "since start"} />}
           />
@@ -249,7 +273,7 @@ export function TrendAreaChart({
 
         {h != null && data[h] && n > 1 && (
           <Tip x={x(h)} y={Math.min(pts[h][1], hasCmp ? cmpPts[h][1] : Infinity) - 88} bound={plotW}>
-            <div className="mb-1 text-[12px] text-wc-tip-muted">{fmtDate(dates[h], grain)}{forecastFrom != null && h > forecastFrom ? " (forecast)" : ""}</div>
+            <div className="mb-1 text-[12px] text-wc-tip-muted">{fmtDate(dates[h], grain)}{forecastFrom != null && (noActual || h > forecastFrom) ? " (forecast)" : ""}</div>
             <TipRow color={c.accent} label={valueLabel} value={fmt(data[h].value, kind, { compact: false })} />
             {bandAt(h) && <div className="text-[12px] text-wc-tip-muted">{bandLabel}: {fmt(data[h].low as number, kind)} to {fmt(data[h].high as number, kind)}</div>}
             {hasCmp && <TipRow color={c.compare} label={compareLabel} value={fmt(data[h].compare as number, kind, { compact: false })} />}
@@ -262,6 +286,7 @@ export function TrendAreaChart({
         )}
         <LiveRegion at={nav.pos} text={live} />
       </div>
+      {dropped > 0 && <SparseNote>{dropped} of {raw.length} readings {dropped === 1 ? "has no value and is" : "have no value and are"} not plotted. View data shows {dropped === 1 ? "it" : "them"}.</SparseNote>}
       {n === 1 && <SparseNote>One reading so far. The trend line appears after the next update.</SparseNote>}
       {n > 1 && n < 4 && <SparseNote>Only {n} readings so far, so each one is marked.</SparseNote>}
     </ChartCard>
